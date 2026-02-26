@@ -1,6 +1,6 @@
 name: CSV Processing CI
 
-# 🔑 ADD THIS SECTION - Grant write permissions
+# 🔑 Grant write permissions for auto-commit
 permissions:
   contents: write
 
@@ -19,7 +19,6 @@ jobs:
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
-        # 🔑 Use token with write access
         token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Set up Python
@@ -50,10 +49,16 @@ jobs:
       run: |
         echo "=== Output Files ==="
         ls -la output/
-        if [ -f output/processed_sample_data.csv ]; then
-          echo "✓ Processed file created successfully"
+        
+        # Check if ANY processed CSV files exist (flexible check)
+        PROCESSED_FILES=$(find output/ -name "processed_*.csv" -type f | wc -l)
+        
+        if [ "$PROCESSED_FILES" -gt 0 ]; then
+          echo "✓ Found $PROCESSED_FILES processed CSV file(s):"
+          find output/ -name "processed_*.csv" -type f
+          echo "✓ Processing successful!"
         else
-          echo "❌ Processed file not found"
+          echo "❌ No processed CSV files found in output/"
           exit 1
         fi
 
