@@ -3,31 +3,31 @@ import pandas as pd
 def standardize_date_formats(df):
     """
     Standardizes all date columns to YYYY-MM-DD format.
-    
-    Args:
-        df (pandas.DataFrame): Input DataFrame
-        
-    Returns:
-        pandas.DataFrame: DataFrame with standardized date formats
     """
     date_columns = []
     
-    # Identify potential date columns (common names)
-    date_keywords = ['date', 'time', 'join', 'created', 'updated']
-    potential_date_cols = [col for col in df.columns 
-                          if any(keyword in col.lower() for keyword in date_keywords)]
+    # Common date column names to target
+    date_keywords = ['date', 'time', 'join', 'created', 'updated', 'birth']
     
-    # Also try all object columns
+    # Make a copy to avoid modifying original
+    df = df.copy()
+    
     for col in df.select_dtypes(include=['object']).columns:
-        try:
-            # Try parsing as date
-            parsed = pd.to_datetime(df[col], errors='coerce', dayfirst=False)
-            # If successful, format to standard
-            if parsed.notna().any():
-                df[col] = parsed.dt.strftime('%Y-%m-%d')
-                date_columns.append(col)
-        except:
-            pass  # Not a date column, skip
+        # Check if column name suggests it's a date column
+        is_date_column = any(keyword in col.lower() for keyword in date_keywords)
+        
+        if is_date_column:
+            try:
+                # Try parsing with multiple formats
+                parsed = pd.to_datetime(df[col], errors='coerce', dayfirst=False)
+                
+                # If we successfully parsed some values, standardize the column
+                if parsed.notna().any():
+                    df[col] = parsed.dt.strftime('%Y-%m-%d')
+                    date_columns.append(col)
+            except Exception as e:
+                print(f"  Warning: Could not parse date column '{col}': {e}")
+                pass
     
     print(f"  Standardized date formats in columns: {date_columns}")
     return df
